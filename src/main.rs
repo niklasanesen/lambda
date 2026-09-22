@@ -1,6 +1,8 @@
 use axum::{Router, routing::get};
 use oauth2::{AuthUrl, ClientId, ClientSecret, EndpointNotSet, EndpointSet, RedirectUrl, TokenUrl};
 
+mod auth;
+
 type BasicClient = oauth2::basic::BasicClient<
     EndpointSet,
     EndpointNotSet,
@@ -41,6 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
+        .nest("/auth", auth::mount())
         .with_state(ctx);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8080").await?;
