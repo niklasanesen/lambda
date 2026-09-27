@@ -1,7 +1,10 @@
+use crate::database::ConnectionPool;
 use axum::{Router, routing::get};
 use oauth2::{AuthUrl, ClientId, ClientSecret, EndpointNotSet, EndpointSet, RedirectUrl, TokenUrl};
 
 mod auth;
+mod database;
+mod error;
 
 type BasicClient = oauth2::basic::BasicClient<
     EndpointSet,
@@ -15,6 +18,9 @@ type BasicClient = oauth2::basic::BasicClient<
 struct Ctx {
     google: BasicClient,
     github: BasicClient,
+    reqwest: reqwest::Client,
+    prod: bool,
+    redis: ConnectionPool,
 }
 
 #[tokio::main]
@@ -22,6 +28,8 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
 
     let api_url = std::env::var("API_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".to_owned());
+    let prod =
+        std::env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_owned()) == "production";
 
     let google = oauth_client(
         std::env::var("GOOGLE_CLIENT_ID")?,
@@ -39,7 +47,22 @@ async fn main() -> anyhow::Result<()> {
         format!("{api_url}/auth/github/callback"),
     )?;
 
-    let ctx = Ctx { google, github };
+    let reqwest = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .user_agent("lambda")
+        .build()?;
+
+    let redis = bb8::Pool::builder()
+        .build(redis::Client::open(std::env::var("REDIS_URL")?)?)
+        .await?;
+
+    let ctx = Ctx {
+        google,
+        github,
+        reqwest,
+        prod,
+        redis,
+    };
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
