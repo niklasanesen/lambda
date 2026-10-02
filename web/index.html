@@ -10,6 +10,27 @@
     <link href="output.css" rel="stylesheet" />
   </head>
   <body>
-    <p class="text-red-300">hello world!</p>
+    <div class="container mx-auto px-6">
+      <header class="flex items-center justify-between py-5 flex-wrap relative">
+        <a href="/"><img src="logomark.svg" alt="lambda" /></a>
+        <details
+          class="contents details-content:w-full md:details-content:contents"
+        >
+          <summary class="block [&::-webkit-details-marker]:hidden md:hidden">
+            <img src="menu.svg" alt="menu" />
+          </summary>
+          <nav class="flex flex-col items-center gap-3 md:contents">
+            <div
+              class="contents md:flex md:gap-8 md:absolute md:left-1/2 md:-translate-x-1/2"
+            >
+              <a href="#">pricing</a>
+              <a href="https://github.com/niklasanesen/lambda">repo</a>
+              <a href="mailto:contact@lambda.new">contact</a>
+            </div>
+            <a href="#">start now</a>
+          </nav>
+        </details>
+      </header>
+    </div>
   </body>
 </html>
