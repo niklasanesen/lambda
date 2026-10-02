@@ -8,6 +8,7 @@
 
 @theme {
   --font-geist: "Geist", sans-serif;
+  --color-lambda: #839cb2;
 }
 
 @font-face {
@@ -16,4 +17,13 @@
   font-weight: 100 900;
   font-display: swap;
   src: url("Geist.woff2") format("woff2");
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center h-8 px-4 rounded-xl shrink-0 whitespace-nowrap transition-colors;
+  }
+  .btn-primary {
+    @apply bg-white text-black hover:bg-lambda;
+  }
 }
