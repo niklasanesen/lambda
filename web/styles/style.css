@@ -17,7 +17,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("Geist.woff2") format("woff2");
+  src: url("../fonts/Geist.woff2") format("woff2");
 }
 
 @layer components {
@@ -34,5 +34,5 @@
   font-style: normal;
   font-weight: 200 800;
   font-display: swap;
-  src: url("Manrope.woff2") format("woff2");
+  src: url("../fonts/Manrope.woff2") format("woff2");
 }
