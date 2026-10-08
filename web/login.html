@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>login | lambda</title>
+    <meta name="description" content="log in or register to lambda" />
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link href="styles/output.css" rel="stylesheet" />
+    <script src="scripts/main.js" defer></script>
+  </head>
+  <body>
+    <main class="mx-auto max-w-xl px-6 pt-20">
+      <div class="ml-6 mb-6">
+        <a href="index.html">
+          <img src="assets/logomark.svg" alt="lambda" class="inline-block" />
+        </a>
+      </div>
+      <div class="border rounded-3xl p-6 flex flex-col gap-3">
+        <div class="text-center flex flex-col gap-1 px-2 text-pretty">
+          <h1 class="text-xl font-medium">log in or register</h1>
+          <p class="text-neutral-400">
+            select a provider to continue to the dashboard
+          </p>
+        </div>
+        <div class="flex flex-col gap-3 mx-auto w-full max-w-md">
+          <a href="/auth/google" class="btn btn-border btn-xl" data-api>
+            <img src="assets/google.svg" alt="google" />
+            continue with google
+          </a>
+          <a href="/auth/github" class="btn btn-border btn-xl" data-api>
+            <img src="assets/github.svg" alt="github" />
+            continue with github
+          </a>
+        </div>
+        <a href="#" class="text-center text-neutral-500 underline">
+          privacy & terms
+        </a>
+      </div>
+    </main>
+  </body>
+</html>

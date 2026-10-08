@@ -1,6 +1,7 @@
 use crate::database::ConnectionPool;
 use axum::{Router, routing::get};
 use oauth2::{AuthUrl, ClientId, ClientSecret, EndpointNotSet, EndpointSet, RedirectUrl, TokenUrl};
+use tower_http::services::ServeDir;
 
 mod auth;
 mod database;
@@ -21,6 +22,7 @@ struct Ctx {
     reqwest: reqwest::Client,
     prod: bool,
     redis: ConnectionPool,
+    client_url: String,
 }
 
 #[tokio::main]
@@ -30,6 +32,8 @@ async fn main() -> anyhow::Result<()> {
     let api_url = std::env::var("API_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".to_owned());
     let prod =
         std::env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_owned()) == "production";
+    let client_url =
+        std::env::var("CLIENT_URL").unwrap_or_else(|_| "http://127.0.0.1:8080/web".to_owned());
 
     let google = oauth_client(
         std::env::var("GOOGLE_CLIENT_ID")?,
@@ -62,12 +66,17 @@ async fn main() -> anyhow::Result<()> {
         reqwest,
         prod,
         redis,
+        client_url,
     };
 
-    let app = Router::new()
+    let mut app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .nest("/auth", auth::mount())
         .with_state(ctx);
+
+    if !prod {
+        app = app.nest_service("/web", ServeDir::new("web"))
+    }
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8080").await?;
     println!("listening to http://{}", listener.local_addr()?);

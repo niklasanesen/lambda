@@ -83,6 +83,7 @@ async fn google_callback(
         google,
         reqwest,
         prod,
+        client_url,
         ..
     }): State<Ctx>,
     DatabaseConnection(mut conn): DatabaseConnection,
@@ -113,7 +114,7 @@ async fn google_callback(
 
     Ok((
         set_session(&mut conn, user_id, prod, jar).await?,
-        Redirect::to("/"),
+        Redirect::to(&format!("{client_url}/dashboard/index.html")),
     ))
 }
 
@@ -136,6 +137,7 @@ async fn github_callback(
         github,
         reqwest,
         prod,
+        client_url,
         ..
     }): State<Ctx>,
     DatabaseConnection(mut conn): DatabaseConnection,
@@ -177,7 +179,7 @@ async fn github_callback(
 
     Ok((
         set_session(&mut conn, user_id, prod, jar).await?,
-        Redirect::to("/"),
+        Redirect::to(&format!("{client_url}/dashboard/index.html")),
     ))
 }
 
