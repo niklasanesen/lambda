@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 const CSRF_TOKEN: &str = "csrf_token";
 const SESSION_MAX_AGE: u64 = 60 * 60 * 24 * 7;
-const SESSION: &str = "session";
+pub const SESSION: &str = "session";
 
 pub fn mount() -> Router<Ctx> {
     Router::new()
@@ -183,9 +183,10 @@ async fn github_callback(
     ))
 }
 
-fn check_csrf_token(jar: &CookieJar, state: &str) -> anyhow::Result<()> {
-    let stored_state = jar.get(CSRF_TOKEN).context("missing csrf token")?.value();
-    anyhow::ensure!(stored_state == state, "csrf token mismatch");
+fn check_csrf_token(jar: &CookieJar, state: &str) -> Result<(), AppError> {
+    if !jar.get(CSRF_TOKEN).is_some_and(|c| c.value() == state) {
+        return Err(AppError::Unauthorized);
+    }
     Ok(())
 }
 

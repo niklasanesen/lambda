@@ -1,9 +1,27 @@
-use crate::database::ConnectionPool;
-use axum::{Router, routing::get};
+use crate::{
+    auth::SESSION,
+    database::{ConnectionPool, DatabaseConnection},
+    error::AppError,
+};
+use axum::{
+    Router,
+    extract::Request,
+    http::{HeaderValue, Method},
+    middleware::{self, Next},
+    response::Response,
+    routing::get,
+};
+use axum_extra::extract::CookieJar;
 use oauth2::{AuthUrl, ClientId, ClientSecret, EndpointNotSet, EndpointSet, RedirectUrl, TokenUrl};
-use tower_http::services::ServeDir;
+use redis::AsyncCommands;
+use tower_http::{
+    cors::{AllowHeaders, CorsLayer},
+    services::ServeDir,
+};
+use uuid::Uuid;
 
 mod auth;
+mod dashboard;
 mod database;
 mod error;
 
@@ -34,6 +52,13 @@ async fn main() -> anyhow::Result<()> {
         std::env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_owned()) == "production";
     let client_url =
         std::env::var("CLIENT_URL").unwrap_or_else(|_| "http://127.0.0.1:8080/web".to_owned());
+
+    let cors = CorsLayer::new()
+        .allow_origin(client_url.parse::<HeaderValue>()?)
+        .allow_methods([Method::GET])
+        .allow_headers(AllowHeaders::mirror_request())
+        .allow_credentials(true)
+        .max_age(std::time::Duration::from_secs(600));
 
     let google = oauth_client(
         std::env::var("GOOGLE_CLIENT_ID")?,
@@ -69,9 +94,15 @@ async fn main() -> anyhow::Result<()> {
         client_url,
     };
 
+    let protected = Router::new()
+        .nest("/dashboard", dashboard::mount())
+        .route_layer(middleware::from_fn_with_state(ctx.clone(), auth_middleware));
+
     let mut app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .nest("/auth", auth::mount())
+        .merge(protected)
+        .layer(cors)
         .with_state(ctx);
 
     if !prod {
@@ -95,4 +126,20 @@ fn oauth_client(
         .set_auth_uri(AuthUrl::new(auth_url)?)
         .set_token_uri(TokenUrl::new(token_url)?)
         .set_redirect_uri(RedirectUrl::new(redirect_url)?))
+}
+
+#[derive(Clone)]
+pub struct UserId(Uuid);
+
+async fn auth_middleware(
+    jar: CookieJar,
+    DatabaseConnection(mut conn): DatabaseConnection,
+    mut req: Request,
+    next: Next,
+) -> Result<Response, AppError> {
+    let session_id = jar.get(SESSION).ok_or(AppError::Unauthorized)?.value();
+    let exists: Option<Uuid> = conn.get(format!("session:{session_id}")).await?;
+    let user_id = exists.ok_or(AppError::Unauthorized)?;
+    req.extensions_mut().insert(UserId(user_id));
+    Ok(next.run(req).await)
 }

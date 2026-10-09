@@ -8,6 +8,23 @@
     <link rel="icon" href="../favicon.ico" sizes="32x32" />
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link href="../styles/output.css" rel="stylesheet" />
+    <script src="../scripts/htmx.min.js" defer></script>
+    <script src="../scripts/main.js" defer></script>
   </head>
-  <body></body>
+  <body>
+    <div>
+      <header class="flex flex-col bg-neutral-950 border-b">
+        <div class="flex items-center justify-between px-4 h-14">
+          <a href="index.html">
+            <img src="../assets/logomark.svg" alt="lambda" />
+          </a>
+          <div hx-get="/dashboard/avatar" hx-trigger="load">
+            <div
+              class="size-8 rounded-full bg-neutral-900 shrink-0 animate-pulse block"
+            ></div>
+          </div>
+        </div>
+      </header>
+    </div>
+  </body>
 </html>
