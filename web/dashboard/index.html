@@ -5,11 +5,16 @@
     <meta name="viewport" content="width=device-width" />
     <title>dashboard | lambda</title>
     <meta name="description" content="the lambda dashboard" />
+    <meta name="htmx-config" content='{"mode":"cors"}' />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="connect-src 'self' https://api.lambda.new"
+    />
     <link rel="icon" href="../favicon.ico" sizes="32x32" />
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link href="../styles/output.css" rel="stylesheet" />
-    <script src="../scripts/htmx.min.js" defer></script>
     <script src="../scripts/main.js" defer></script>
+    <script src="../scripts/htmx.min.js" defer></script>
   </head>
   <body>
     <div>
