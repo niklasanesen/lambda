@@ -2,6 +2,8 @@ use axum::{Router, routing::get};
 use oauth2::{AuthUrl, ClientId, ClientSecret, EndpointNotSet, EndpointSet, RedirectUrl, TokenUrl};
 
 mod auth;
+mod database;
+mod error;
 
 type BasicClient = oauth2::basic::BasicClient<
     EndpointSet,
@@ -16,6 +18,8 @@ struct Ctx {
     google: BasicClient,
     github: BasicClient,
     prod: bool,
+    reqwest: reqwest::Client,
+    redis: database::ConnectionPool,
 }
 
 #[tokio::main]
@@ -42,10 +46,21 @@ async fn main() -> anyhow::Result<()> {
         format!("{api_url}/auth/github/callback"),
     )?;
 
+    let reqwest = reqwest::Client::builder()
+        .user_agent("lambda/0.1.0")
+        .redirect(reqwest::redirect::Policy::none())
+        .build()?;
+
+    let redis = bb8::Pool::builder()
+        .build(redis::Client::open(std::env::var("REDIS_URL")?)?)
+        .await?;
+
     let ctx = Ctx {
         google,
         github,
         prod,
+        reqwest,
+        redis,
     };
 
     let app = Router::new()
