@@ -10,6 +10,36 @@
     <link href="styles/output.css" rel="stylesheet" />
   </head>
   <body>
-    <h1>hello world!</h1>
+    <div class="container mx-auto px-6 xl:max-w-7xl">
+      <header class="flex items-center justify-between py-4 flex-wrap relative">
+        <a href="index.html"><img src="assets/logomark.svg" alt="lambda" /></a>
+        <details
+          class="contents details-content:basis-full md:details-content:contents"
+        >
+          <summary
+            class="list-none [&::-webkit-details-marker]:hidden md:hidden"
+          >
+            <img src="assets/menu.svg" alt="menu" />
+          </summary>
+          <nav class="flex flex-col items-center gap-3 md:contents">
+            <div
+              class="md:flex md:gap-8 md:absolute md:left-1/2 md:-translate-x-1/2 contents"
+            >
+              <a href="#" class="hover:text-lambda">pricing</a>
+              <a
+                href="https://github.com/niklasanesen/lambda"
+                class="hover:text-lambda"
+              >
+                repo
+              </a>
+              <a href="mailto:contact@lambda.new" class="hover:text-lambda">
+                contact
+              </a>
+            </div>
+            <a href="#" class="btn btn-primary duration-300">start now</a>
+          </nav>
+        </details>
+      </header>
+    </div>
   </body>
 </html>
