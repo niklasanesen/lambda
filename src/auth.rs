@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 const CSRF_TOKEN: &str = "csrf_token";
 const SESSION_MAX_AGE: u64 = 60 * 60 * 24 * 7;
-const SESSION: &str = "session";
+pub const SESSION: &str = "session";
 
 pub fn mount() -> Router<Ctx> {
     Router::new()
