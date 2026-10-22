@@ -197,6 +197,11 @@ pub struct User {
     pub avatar_url: Option<String>,
 }
 
+#[derive(Serialize)]
+struct Team {
+    name: String,
+}
+
 async fn upsert_user(
     conn: &mut Connection,
     provider: &str,
@@ -206,14 +211,25 @@ async fn upsert_user(
 ) -> Result<Uuid, AppError> {
     let provider_key = format!("{provider}:{provider_id}");
     let exists: Option<Uuid> = conn.get(&provider_key).await?;
-    let id = exists.unwrap_or_else(Uuid::now_v7);
+    let user_id = exists.unwrap_or_else(Uuid::now_v7);
     if exists.is_none() {
-        conn.set::<_, _, ()>(provider_key, id).await?;
+        let team_id = Uuid::now_v7();
+        let team = Team {
+            name: "personal".to_owned(),
+        };
+        redis::pipe()
+            .atomic()
+            .set(provider_key, user_id)
+            .set(format!("team:{team_id}"), serde_json::to_string(&team)?)
+            .sadd(format!("team:{team_id}:members"), user_id)
+            .sadd(format!("user:{user_id}:teams"), team_id)
+            .query_async::<()>(&mut **conn)
+            .await?;
     }
     let user = User { email, avatar_url };
-    conn.set::<_, _, ()>(format!("user:{id}"), serde_json::to_string(&user)?)
+    conn.set::<_, _, ()>(format!("user:{user_id}"), serde_json::to_string(&user)?)
         .await?;
-    Ok(id)
+    Ok(user_id)
 }
 
 async fn set_session(
@@ -222,10 +238,10 @@ async fn set_session(
     prod: bool,
     jar: CookieJar,
 ) -> Result<CookieJar, AppError> {
-    let id = Uuid::new_v4();
-    conn.set_ex::<_, _, ()>(format!("session:{id}"), user_id, SESSION_MAX_AGE)
+    let session_id = Uuid::new_v4();
+    conn.set_ex::<_, _, ()>(format!("session:{session_id}"), user_id, SESSION_MAX_AGE)
         .await?;
-    let cookie = Cookie::build((SESSION, id.to_string()))
+    let cookie = Cookie::build((SESSION, session_id.to_string()))
         .path("/")
         .http_only(true)
         .secure(prod)

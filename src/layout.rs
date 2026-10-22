@@ -4,17 +4,19 @@ use crate::{
     database::{ConnectionPool, DatabaseConnection},
     error::AppError,
 };
+use anyhow::Context;
 use axum::{
     RequestPartsExt,
     extract::{Extension, FromRef, FromRequestParts, OriginalUri},
     http::request::Parts,
 };
-use redis::AsyncCommands;
+use uuid::Uuid;
 
 pub struct Layout {
     pub path: String,
     pub landing_url: String,
     pub user: User,
+    pub team_id: Uuid,
 }
 
 impl<S> FromRequestParts<S> for Layout
@@ -32,11 +34,16 @@ where
             .extract_with_state::<DatabaseConnection, _>(state)
             .await?;
         let Extension(UserId(user_id)) = parts.extract::<Extension<UserId>>().await?;
-        let user_json: String = conn.get(format!("user:{user_id}")).await?;
+        let (user_json, teams): (String, Vec<Uuid>) = redis::pipe()
+            .get(format!("user:{user_id}"))
+            .smembers(format!("user:{user_id}:teams"))
+            .query_async(&mut *conn)
+            .await?;
         Ok(Layout {
             path: original_uri.path().to_owned(),
             landing_url: ctx.landing_url,
             user: serde_json::from_str(&user_json)?,
+            team_id: teams.into_iter().next().context("user has no team")?,
         })
     }
 }
