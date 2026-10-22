@@ -14,7 +14,11 @@ use uuid::Uuid;
 mod auth;
 mod dashboard;
 mod database;
+mod domains;
 mod error;
+mod layout;
+mod projects;
+mod settings;
 
 type BasicClient = oauth2::basic::BasicClient<
     EndpointSet,
@@ -79,6 +83,9 @@ async fn main() -> anyhow::Result<()> {
 
     let protected = Router::new()
         .merge(dashboard::mount())
+        .nest("/projects", projects::mount())
+        .nest("/domains", domains::mount())
+        .nest("/settings", settings::mount())
         .route_layer(middleware::from_fn_with_state(ctx.clone(), auth_middleware));
 
     let mut app = Router::new()

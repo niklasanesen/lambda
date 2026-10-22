@@ -16,7 +16,7 @@ use axum_extra::extract::{
 };
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use redis::AsyncCommands;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 const CSRF_TOKEN: &str = "csrf_token";
@@ -36,6 +36,7 @@ async fn google(State(Ctx { google, prod, .. }): State<Ctx>, jar: CookieJar) -> 
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("openid".to_owned()))
         .add_scope(Scope::new("email".to_owned()))
+        .add_scope(Scope::new("profile".to_owned()))
         .url();
     (
         set_csrf_token(csrf_token, "google", prod, jar),
@@ -73,6 +74,7 @@ struct CallbackParams {
 #[derive(Deserialize)]
 struct GoogleUser {
     sub: String,
+    picture: Option<String>,
     email: String,
     email_verified: bool,
 }
@@ -110,7 +112,7 @@ async fn google_callback(
         return Err(anyhow::anyhow!("unverified google email").into());
     }
 
-    let user_id = upsert_user(&mut conn, "google", user.sub, user.email).await?;
+    let user_id = upsert_user(&mut conn, "google", user.sub, user.email, user.picture).await?;
 
     Ok((
         set_session(&mut conn, &user_id, prod, jar).await?,
@@ -121,6 +123,7 @@ async fn google_callback(
 #[derive(Deserialize)]
 struct GithubUser {
     id: u64,
+    avatar_url: String,
 }
 
 #[derive(Deserialize)]
@@ -174,7 +177,7 @@ async fn github_callback(
         .map(|e| e.email)
         .context("unverified github primary email")?;
 
-    let user_id = upsert_user(&mut conn, "github", user.id, email).await?;
+    let user_id = upsert_user(&mut conn, "github", user.id, email, Some(user.avatar_url)).await?;
 
     Ok((
         set_session(&mut conn, &user_id, prod, jar).await?,
@@ -188,11 +191,18 @@ fn check_csrf_token(jar: &CookieJar, state: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct User {
+    pub email: String,
+    pub avatar_url: Option<String>,
+}
+
 async fn upsert_user(
     conn: &mut Connection,
     provider: &str,
     provider_id: impl std::fmt::Display,
     email: String,
+    avatar_url: Option<String>,
 ) -> Result<Uuid, AppError> {
     let provider_key = format!("{provider}:{provider_id}");
     let exists: Option<Uuid> = conn.get(&provider_key).await?;
@@ -200,7 +210,9 @@ async fn upsert_user(
     if exists.is_none() {
         conn.set::<_, _, ()>(provider_key, id).await?;
     }
-    conn.set::<_, _, ()>(format!("user:{id}"), email).await?;
+    let user = User { email, avatar_url };
+    conn.set::<_, _, ()>(format!("user:{id}"), serde_json::to_string(&user)?)
+        .await?;
     Ok(id)
 }
 

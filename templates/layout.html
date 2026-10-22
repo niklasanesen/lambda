@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{{ layout.title() }} | lambda</title>
+    <link rel="icon" href="{{ layout.landing_url }}/favicon.ico" sizes="32x32" />
+    <link rel="icon"
+          href="{{ layout.landing_url }}/favicon.svg"
+          type="image/svg+xml" />
+    <link href="{{ layout.landing_url }}/styles/output.css" rel="stylesheet" />
+    <script src="{{ layout.landing_url }}/scripts/htmx.min.js" defer></script>
+  </head>
+  <body hx-boost:inherited="true">
+    <header class="flex flex-col border-b bg-neutral-950 px-4">
+      <div class="flex items-center justify-between h-14">
+        <a href="/" id="logomark" hx-preserve="true">
+          <img src="{{ layout.landing_url }}/assets/logomark.svg" alt="lambda" />
+        </a>
+        <a href="/settings"
+           class="flex items-center justify-center rounded-full bg-neutral-800 shrink-0 size-8">
+          {% if let Some(avatar_url) = layout.user.avatar_url %}
+            <img src="{{ avatar_url }}"
+                 alt="{{ layout.user.email }}"
+                 class="rounded-full aspect-square size-full object-cover" />
+          {% else %}
+            <span>{{ layout.initial() }}</span>
+          {% endif %}
+        </a>
+      </div>
+      <div class="flex gap-8 overflow-x-auto [scrollbar-width:none] -mb-px">
+        <a href="/"
+           class="pb-1 border-b {% if layout.path == "/" %}border-white{% else %}text-neutral-400 hover:text-white{% endif %}">
+          home
+        </a>
+        <a href="/projects"
+           class="pb-1 border-b {% if layout.path.starts_with("/projects") %}border-white{% else %}text-neutral-400 hover:text-white{% endif %}">
+          projects
+        </a>
+        <a href="/domains"
+           class="pb-1 border-b {% if layout.path.starts_with("/domains") %}border-white{% else %}text-neutral-400 hover:text-white{% endif %}">
+          domains
+        </a>
+        <a href="/settings"
+           class="pb-1 border-b {% if layout.path.starts_with("/settings") %}border-white{% else %}text-neutral-400 hover:text-white{% endif %}">
+          settings
+        </a>
+      </div>
+    </header>
+    {% block content %}{% endblock %}
+  </body>
+</html>
